@@ -1,0 +1,577 @@
+/* ============================================================
+   莱茵档案 · 文档视图（宿主侧）
+   ────────────────────────────────────────────────────────────
+   本文件是"移植"，不是"设计"：所有数值取自原项目样式表
+   src/app/style.css 的真实定义（下方每条旁标注来源选择器）。
+   原项目未定义的 Markdown 元素（表格 / 代码 / 引用 / 标签）
+   标注为「推导」，使用原项目自身的色阶与字距语汇构造，
+   不引入新品色。
+
+   作用域：.rhine-doc-view（本插件注册的视图），
+   不触碰原生阅读视图、主题与其它插件。
+   ============================================================ */
+
+.rhine-doc-view {
+  /* :root —— 原项目根样式 */
+  --rdv-bg: #f0eeee;          /* :root background */
+  --rdv-ink: #080a08;         /* :root color */
+  --rdv-body: #5a584e;        /* .tab-panel p color —— 正文文字色 */
+  --rdv-line: #504b41;        /* .callout-rule background —— 分隔线 */
+  --rdv-rule: #20221d;        /* .detail-rule background —— 标题短条 */
+  --rdv-edge: #b8b3a9;        /* .back-button border —— 细边框 */
+  --rdv-dim: #807b70;         /* .metadata dt color */
+  --rdv-dim-2: #77756d;       /* .eyebrow color */
+  --rdv-dim-3: #77756a;       /* .detail-title-cn > span color */
+  --rdv-foot: #9a9487;        /* .detail-footnote color */
+  --rdv-warm: #946b3c;        /* .back-button:hover color —— 强调色 */
+  --rdv-dot: #8b8f75;         /* .metadata dd i background —— 状态点 */
+  --rdv-dark: #252820;        /* .solid-button background */
+  --rdv-dark-hover: #4b4a3b;  /* .solid-button:hover background */
+  --rdv-dark-ink: #f4f3f0;    /* .solid-button color */
+  --rdv-dark-dim: #bcbfb1;    /* .solid-button > span color */
+  --rdv-chip: #e4d5c1;        /* 暖色块（原项目 535/554 行背景色） */
+  /* 玻璃质感配方 —— 取自原项目真实定义 */
+  --rdv-veil: rgba(227, 224, 215, 0.45);        /* .modal-backdrop 底色 */
+  --rdv-veil-blur: 18px;                        /* .modal-backdrop backdrop-filter */
+  --rdv-glass: rgba(242, 241, 240, 0.66);       /* .terminal-modal 底色（降不透明以透出氛围） */
+  --rdv-glass-blur: 14px;                       /* 顶部/底部条带的毛玻璃 */
+  --rdv-glow: #f7f5ee;                          /* .terminal-modal border（亮边） */
+  --rdv-shadow: rgba(99, 81, 58, 0.08);         /* .terminal-modal box-shadow #63513a20 */
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 !important;
+  background: var(--rdv-bg);
+  color: var(--rdv-ink);
+  font-family: "MiSans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  overflow: hidden;
+}
+.rhine-doc-view .rdv-scan { z-index: 1; }
+.workspace-leaf-content[data-type="rhine-doc-view"] .view-content {
+  padding: 0;
+  background: var(--rdv-bg);
+}
+
+/* 氛围层：以原项目暖色（#e4d5c1 暖块 / #f0eeee 纸色 / #edece9 遮罩色）构造，
+   模拟 3D 场景的光线层次，为磨砂纱提供可透的底。 */
+.rhine-doc-view .rdv-atmos {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 28% 14%, rgba(228, 213, 193, 0.6), transparent 60%),
+    radial-gradient(ellipse at 84% 92%, rgba(227, 224, 215, 0.9), transparent 56%),
+    linear-gradient(168deg, #f0f0ee 0%, #f0eeee 48%, #eceae6 100%);
+}
+/* 磨砂纱：原项目 .modal-backdrop 的真实配方（半透明暖灰 + blur(18px)） */
+.rhine-doc-view .rdv-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: var(--rdv-veil);
+  backdrop-filter: blur(var(--rdv-veil-blur));
+  -webkit-backdrop-filter: blur(var(--rdv-veil-blur));
+}
+/* 扫描线纹理：原项目 iframe 无此元素，属本视图的装饰推导（极低对比） */
+.rhine-doc-view .rdv-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(8, 10, 8, 0.02) 0 1px,
+    transparent 1px 4px
+  );
+}
+
+/* ---------- 顶栏 ---------- */
+.rhine-doc-view .rdv-top {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  height: 44px;               /* 真机 58.4px 的 75%（≈44px） */
+  padding: 0 30px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--rdv-line);
+  position: relative;
+  z-index: 2;
+  background: var(--rdv-glass);
+  backdrop-filter: blur(var(--rdv-glass-blur));
+  -webkit-backdrop-filter: blur(var(--rdv-glass-blur));
+}
+.rhine-doc-view .rdv-crumb {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1 1 auto;             /* 占满剩余空间，避免被按钮挤断 */
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12px;            /* .eyebrow */
+  letter-spacing: 1.3px;      /* .eyebrow */
+  color: var(--rdv-dim-2);    /* .eyebrow */
+}
+.rhine-doc-view .rdv-crumb-item:first-of-type {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rhine-doc-view .rdv-crumb-root,
+.rhine-doc-view .rdv-crumb-item {
+  color: var(--rdv-ink);
+}
+.rhine-doc-view .rdv-crumb-sep {
+  color: var(--rdv-dim-2);
+}
+.rhine-doc-view .rdv-actions {
+  display: flex;
+  gap: 22px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+/* 顶栏按钮：.export-button 规格（11px / 字距 1px / 纯文字 + 箭头） */
+.rhine-doc-view .rdv-action {
+  background: transparent;
+  border: 0;
+  height: auto;               /* 顶栏高度由 .rdv-top 定死，按钮不参与撑高 */
+  min-height: 0;
+  line-height: 1;
+  padding: 0;
+  color: var(--rdv-ink);
+  font-size: 11px;            /* .export-button */
+  letter-spacing: 1px;        /* .export-button */
+  cursor: pointer;
+  box-shadow: none;
+}
+.rhine-doc-view .rdv-action:hover {
+  color: var(--rdv-warm);     /* .back-button:hover */
+}
+.rhine-doc-view .rdv-action:focus,
+.rhine-doc-view .rdv-action:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ---------- 文档区 ---------- */
+.rhine-doc-view .rdv-doc {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  /* 左内边距 = 面包屑第一根「／」的墨迹左缘（真机截图实测 104.3 CSS px，见 doc-view 对齐记录） */
+  padding: 34px 0 40px 104px;
+  position: relative;
+  z-index: 2;
+}
+.rhine-doc-view .rdv-doc > * {
+  max-width: 636px;           /* .detail-content width */
+}
+/* kicker：.detail-kicker */
+.rhine-doc-view .rdv-kicker {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+}
+.rhine-doc-view .rdv-kicker .rdv-status {
+  font-size: 9px;             /* .detail-kicker span:last-child */
+  color: #77756b;
+}
+/* 标题：.detail-content h2 */
+.rhine-doc-view .rdv-title {
+  font-size: 40px;            /* .detail-content h2 */
+  line-height: 1.12;
+  letter-spacing: -1.3px;
+  margin: 30px 0 13px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  font-weight: 700;
+  color: var(--rdv-ink);
+}
+.rhine-doc-view .rdv-title::after {
+  content: none;
+  display: none;
+}
+/* 分类：.detail-title-cn > span */
+.rhine-doc-view .rdv-cat {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--rdv-dim-3);
+}
+/* 短条：.detail-rule */
+.rhine-doc-view .rdv-rule {
+  height: 2px;
+  background: var(--rdv-rule);
+  margin-top: 28px;
+}
+/* 四格：.metadata（2 列网格） */
+.rhine-doc-view .rdv-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px 42px;
+  margin: 28px 0 34px;
+  border: 0;
+  padding: 0;
+}
+.rhine-doc-view .rdv-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rhine-doc-view .rdv-cell small {
+  font-size: 9px;             /* .metadata dt */
+  letter-spacing: 0.7px;
+  color: var(--rdv-dim);
+  text-transform: none;
+}
+.rhine-doc-view .rdv-cell span {
+  margin-top: 8px;            /* .metadata dd */
+  font-size: 14px;
+  color: var(--rdv-ink);
+  overflow-wrap: anywhere;
+}
+.rhine-doc-view .rdv-cell span::before {
+  content: "";
+  display: inline-block;
+  width: 5px;                 /* .metadata dd i */
+  height: 5px;
+  background: var(--rdv-dot);
+  margin-right: 8px;
+  vertical-align: middle;
+}
+/* 只有状态格显示状态点（其余格保持原项目 dd 的纯文本规格） */
+.rhine-doc-view .rdv-cell:not(.rdv-cell-status) span::before {
+  content: none;
+}
+
+/* ---------- 正文：以 .tab-panel p 为段落基准 ---------- */
+.rhine-doc-view .rdv-body {
+  max-width: 636px;
+  color: var(--rdv-body);
+}
+.rhine-doc-view .rdv-body p {
+  font-size: 15px;            /* .tab-panel p */
+  line-height: 1.95;
+  margin: 14px 0 0;
+  text-align: justify;
+  color: var(--rdv-body);
+}
+/* 正文各级标题：原项目正文无对应元素（推导），字号取自 detail 面板的比例 */
+.rhine-doc-view .rdv-body h1 {
+  font-size: 23px;            /* .detail-title-cn */
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  margin: 30px 0 12px;
+  border: 0;
+  padding: 0;
+  color: var(--rdv-ink);
+}
+.rhine-doc-view .rdv-body h1::after { content: none; }
+.rhine-doc-view .rdv-body h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 28px 0 10px;
+  padding: 0 0 8px;
+  border: 0;
+  border-bottom: 1px solid var(--rdv-line) !important;  /* .callout-rule 色 */
+  color: var(--rdv-ink);
+}
+.rhine-doc-view .rdv-body h2::after { content: none; }
+.rhine-doc-view .rdv-body h3,
+.rhine-doc-view .rdv-body h4 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+  margin: 22px 0 8px;
+  color: var(--rdv-ink);
+}
+.rhine-doc-view .rdv-body h5,
+.rhine-doc-view .rdv-body h6 {
+  font-size: 11px;            /* .eyebrow 规格 */
+  letter-spacing: 1.3px;
+  font-weight: 400;
+  color: var(--rdv-dim-2);
+  margin: 18px 0 6px;
+}
+/* 列表：.research-notes li 的间距语汇 + 正文段落字号 */
+.rhine-doc-view .rdv-body ul,
+.rhine-doc-view .rdv-body ol {
+  padding-left: 20px;
+  margin: 12px 0 0;
+}
+.rhine-doc-view .rdv-body li {
+  font-size: 15px;
+  line-height: 1.95;
+  margin: 8px 0;
+  color: var(--rdv-body);
+}
+/* 链接：原项目强调色（.back-button:hover #946b3c） */
+.rhine-doc-view .rdv-body a.internal-link,
+.rhine-doc-view .rdv-body a.external-link {
+  color: var(--rdv-warm);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(148, 107, 60, 0.35);
+}
+.rhine-doc-view .rdv-body a.internal-link:hover,
+.rhine-doc-view .rdv-body a.external-link:hover {
+  border-bottom-color: var(--rdv-warm);
+}
+.rhine-doc-view .rdv-body strong {
+  color: var(--rdv-ink);
+  font-weight: 700;
+}
+.rhine-doc-view .rdv-body em { color: var(--rdv-body); }
+/* 分割线：.callout-rule（1px 细线） */
+.rhine-doc-view .rdv-body hr {
+  height: 1px;
+  width: auto;
+  max-width: 636px;
+  border: 0;
+  margin: 26px 0;
+  background: var(--rdv-line);
+}
+.rhine-doc-view .rdv-body hr::before { content: none; }
+/* 引用：推导（原项目无引用样式）——左线用 .detail-rule 色，底色用极低对比 */
+.rhine-doc-view .rdv-body blockquote {
+  margin: 16px 0 0;
+  padding: 2px 0 2px 16px;
+  border-left: 2px solid var(--rdv-rule);
+  background: transparent;
+  color: var(--rdv-body);
+}
+.rhine-doc-view .rdv-body blockquote p {
+  font-size: 14px;
+  line-height: 1.85;
+  margin: 8px 0;
+  text-align: left;
+}
+/* 表格：推导（原项目无表格）——边框用 .back-button 边框色，表头用 .metadata dt 规格 */
+.rhine-doc-view .rdv-body table {
+  border-collapse: collapse;
+  margin: 16px 0 0;
+  font-size: 13px;
+  border: 1px solid var(--rdv-edge);
+}
+.rhine-doc-view .rdv-body th,
+.rhine-doc-view .rdv-body td {
+  border: 1px solid var(--rdv-edge);
+  padding: 7px 12px;
+  text-align: left;
+}
+.rhine-doc-view .rdv-body th {
+  font-size: 9px;             /* .metadata dt */
+  letter-spacing: 0.7px;
+  font-weight: 400;
+  color: var(--rdv-dim);
+}
+.rhine-doc-view .rdv-body td {
+  color: var(--rdv-body);
+}
+/* 代码：推导——行内用暖色块 #e4d5c1，块级用 .solid-button 的深色 */
+.rhine-doc-view .rdv-body code {
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 0.86em;
+  background: var(--rdv-chip);
+  color: #24221f;
+  border-radius: 0;
+  padding: 0.12em 0.36em;
+}
+.rhine-doc-view .rdv-body pre {
+  background: var(--rdv-dark);
+  border: 0;
+  border-radius: 0;
+  padding: 14px 18px;
+  margin: 16px 0 0;
+}
+.rhine-doc-view .rdv-body pre code {
+  background: transparent;
+  color: var(--rdv-dark-ink);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+/* 标签：推导——沿用 .back-button 的描边规格（10px / border #b8b3a9） */
+.rhine-doc-view .rdv-body a.tag {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  color: var(--rdv-body);
+  border: 1px solid var(--rdv-edge);
+  border-radius: 0;
+  padding: 3px 7px;
+  text-decoration: none;
+}
+/* 图片：推导 */
+.rhine-doc-view .rdv-body img {
+  max-width: 100%;
+  border: 1px solid var(--rdv-edge);
+  border-radius: 0;
+}
+/* Callout：推导——沿用 .tab-panel p 字号 + 细边框 */
+.rhine-doc-view .rdv-body .callout {
+  border: 1px solid var(--rdv-edge);
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 16px;
+}
+.rhine-doc-view .rdv-body .callout-title {
+  font-size: 11px;
+  letter-spacing: 1.3px;
+  color: var(--rdv-dim-2);
+}
+.rhine-doc-view .rdv-body .rdv-render-failed {
+  border: 1px solid var(--rdv-edge);
+  padding: 12px 14px;
+  color: var(--rdv-dim);
+  font-size: 13px;
+}
+
+/* ---------- 底栏 ---------- */
+.rhine-doc-view .rdv-foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 30px;                  /* .detail-actions gap */
+  height: 56px;               /* 真机 74.4px 的 75%（≈56px） */
+  padding: 0 104px;           /* 左内边距跟随正文左缘 */
+  box-sizing: border-box;
+  border-top: 1px solid var(--rdv-line);
+  position: relative;
+  z-index: 2;
+  background: var(--rdv-glass);
+  backdrop-filter: blur(var(--rdv-glass-blur));
+  -webkit-backdrop-filter: blur(var(--rdv-glass-blur));
+}
+/* 主按钮：.solid-button */
+.rhine-doc-view .rdv-solid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  background: var(--rdv-dark);
+  color: var(--rdv-dark-ink);
+  border: 0;
+  border-radius: 0;
+  height: 35px;               /* 46 × 0.75（栏高同步缩到 75%） */
+  min-height: 0;              /* 压掉 Obsidian 基础 button 的默认高度 */
+  padding: 0 14px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  box-shadow: none;
+  transition: background 0.2s;
+}
+.rhine-doc-view .rdv-solid:hover {
+  background: var(--rdv-dark-hover);
+}
+.rhine-doc-view .rdv-solid:focus,
+.rhine-doc-view .rdv-solid:focus-visible { outline: none; box-shadow: none; }
+.rhine-doc-view .rdv-solid .rdv-solid-hint {
+  font-size: 11px;            /* .solid-button > span */
+  color: var(--rdv-dark-dim);
+  letter-spacing: 0;
+}
+/* 次要按钮：沿用 .back-button 的描边语汇 */
+.rhine-doc-view .rdv-ghost {
+  height: 35px;
+  min-height: 0;
+  padding: 0 14px;
+  background: transparent;
+  border: 1px solid var(--rdv-edge);
+  border-radius: 0;
+  color: var(--rdv-ink);
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  box-shadow: none;
+}
+.rhine-doc-view .rdv-ghost:hover {
+  color: var(--rdv-warm);
+  border-color: var(--rdv-warm);
+}
+.rhine-doc-view .rdv-ghost:focus,
+.rhine-doc-view .rdv-ghost:focus-visible { outline: none; box-shadow: none; }
+
+/* 路径：.detail-footnote */
+.rhine-doc-view .rdv-foot-path {
+  font-size: 8px;
+  letter-spacing: 0.6px;
+  color: var(--rdv-foot);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 滚动条：照抄原项目定义（scrollbar-width: thin / #bbb4a6） ---------- */
+.rhine-doc-view .rdv-doc {
+  scrollbar-width: thin;                  /* 原项目 style.css:836 */
+  scrollbar-color: #bbb4a6 transparent;   /* 原项目 style.css:837 */
+}
+.rhine-doc-view .rdv-doc::-webkit-scrollbar {
+  width: 8px;
+}
+.rhine-doc-view .rdv-doc::-webkit-scrollbar-thumb {
+  background: #bbb4a6;
+  border-radius: 0;
+}
+.rhine-doc-view .rdv-doc::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- 缺档 / 读失败 ---------- */
+.rhine-doc-view .rdv-missing {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--rdv-dim);
+  letter-spacing: 0.6px;
+}
+.rhine-doc-view .rdv-missing-title {
+  font-size: 12px;
+  letter-spacing: 1.3px;
+  color: var(--rdv-ink);
+}
+
+/* ---------- 深色模式：取原项目 3D 场景的深色值 ---------- */
+.theme-dark .rhine-doc-view {
+  --rdv-bg: #11181b;          /* theme-material background */
+  --rdv-ink: #f0eeee;
+  --rdv-body: #b9b6ab;
+  --rdv-line: #263136;        /* mist */
+  --rdv-rule: #f0eeee;
+  --rdv-edge: #3a4348;
+  --rdv-dim: #8a8f8c;
+  --rdv-dim-2: #8a8f8c;
+  --rdv-dim-3: #8a8f8c;
+  --rdv-foot: #7d827f;
+  --rdv-warm: #c99a5f;
+  --rdv-dot: #8b8f75;
+}
+.theme-dark .workspace-leaf-content[data-type="rhine-doc-view"] .view-content {
+  background: #11181b;
+}
+.theme-dark .rhine-doc-view {
+  --rdv-veil: rgba(17, 24, 27, 0.5);
+  --rdv-glass: rgba(25, 33, 37, 0.72);
+  --rdv-glow: #263136;
+  --rdv-shadow: rgba(0, 0, 0, 0.35);
+}
+.theme-dark .rhine-doc-view .rdv-atmos {
+  background:
+    radial-gradient(ellipse at 28% 14%, rgba(38, 49, 54, 0.9), transparent 60%),
+    radial-gradient(ellipse at 84% 92%, rgba(17, 24, 27, 0.95), transparent 56%),
+    linear-gradient(168deg, #141b1f 0%, #11181b 48%, #0d1315 100%);
+}
+.theme-dark .rhine-doc-view .rdv-body code {
+  background: #192125;
+  color: #ded9cc;
+}

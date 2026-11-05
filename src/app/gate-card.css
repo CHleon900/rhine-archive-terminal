@@ -1,0 +1,279 @@
+/* 进场内嵌密码闸门（gate-card.ts）。
+   排印/版式基准 = D:\AI AGENT\swiss-soft-ui\SKILL.md §12 Compact variant
+   （2026-10-18 用户 m06346：「我说的那个文档」＝ AI AGENT 文件夹下的 swiss-soft-ui）。
+   核心：不是一个面板里堆若干「各自有底的方框」，而是**一组通栏分段条**，
+   段与段之间只用 1px hairline 分隔（不用阴影、不用卡片、不用色块）。
+   用户 m06203 的原始要求「底色相同，只是被四周线条框定」由此落实。
+   色板回到本项目基准并被用户 m06467 调亮：纸 #f0eeee / 卡面 #f3f2f0 /
+   墨 #151714 / 强调橙 #ed821b（＝开机动画轨道点与 --fb-accent 同一支橙色，
+   m06467「本来这个橙色没那么暗淡的」）/ 辅助灰 #888277 / 错误 #963e32。 */
+
+/* 内容块左移：.loading 自身是 flex 容器，位移施加在直接子元素上
+   （loading-mark / span / i / .entry-controls 同属一层）。左移量与登录卡
+   的偏移互为镜像：内容块中线在 50%−240px，卡片中线在 50%+240px。 */
+.loading.gate-open > *:not(.gate-layer) {
+  transform: translateX(var(--gate-shift, -240px));
+  opacity: 0.42;
+}
+.loading > *:not(.gate-layer) {
+  transition: transform 0.58s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.58s;
+}
+/* 减少动态效果：直接到位，无过渡。 */
+.loading.gate-instant > *:not(.gate-layer),
+.loading.gate-instant .gate-card {
+  transition: none !important;
+}
+
+.gate-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* 登录卡中线 = 画面中线 + 240px，与左移内容块镜像对称 */
+  transform: translateX(240px);
+  z-index: 2;
+  pointer-events: none; /* 空隙处点击穿透给下面的内容块（如声音重试按钮） */
+}
+
+/* 卡片外壳：只有一圈 1px 线，无阴影、无圆角（§12.4 禁 --r-lg / shadow）。
+   卡面是一层极薄的暖白，只为从纸底上轻轻浮起——全卡只有这一种底色，
+   不再有「输入框一块、状态块一块」，所以 m06203 的「多层底色」问题不会复发。 */
+.gate-card {
+  pointer-events: auto;
+  width: min(460px, calc(100vw - 48px));
+  background: #f4f4f2;
+  border: 1px solid #969183;
+  transform: translateX(96px);
+  opacity: 0;
+  transition: transform 0.62s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.loading.gate-open .gate-card {
+  transform: translateX(0);
+  opacity: 1;
+}
+/* 成功退场：向右滑出并淡出（与进入方向对称）。 */
+.loading.gate-done .gate-card {
+  transform: translateX(72px);
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.5, 0, 0.75, 0.4), opacity 0.42s ease-in;
+}
+
+/* §12.1-1 Header band：ink 实底 + 底部 3px 强调线 + 10px 强调方块。
+   这是 compact variant 的签名元素，也是整卡唯一的深色面（墨面占比不到 15%）。 */
+.gate-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: #151714;
+  border-bottom: 3px solid #ed821b;
+  color: #f6f5f3;
+}
+.gate-mark {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  background: #ed821b;
+  border-radius: 2px;
+}
+.gate-head-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.gate-head-sub {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #a9a49a;
+  transition: color 0.2s;
+}
+
+/* §12.1-3 Preview section：段内距 16px 18px，段与段之间 hairline。 */
+.gate-band {
+  padding: 18px 20px;
+  border-bottom: 1px solid #c8c9c0;
+}
+/* 输入段略高一点，让「标签 + 底线」不与上下的字行贴住。 */
+.gate-band-input {
+  padding: 17px 20px 20px;
+}
+
+/* 大标题：中文走人文主义（MiSans 自带真 600，非系统伪粗），字距压到 .01em
+   ——CJK 宽字距会发虚（见《莱茵生命字体选型与排印设计规范》§3.2）。 */
+.gate-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #151714;
+}
+.gate-sub {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.9;
+  color: #5e615a;
+}
+
+/* §12.1-4 Info row 的 label 规范：10px/700 全大写 .06em，等宽小标签列。
+   中文侧降到 .02em（小号 CJK 宽字距同样发虚）。 */
+.gate-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #888277;
+  margin-bottom: 3px;
+}
+.gate-label-cn {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+/* 输入区不另画方框：只用一条底线（§6.4 field 的极简形态），
+   与 m06203「只是被四周线条进行框定」一致——聚焦时底线转亮橙。 */
+.gate-line {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  border-bottom: 1px solid #969183;
+  transition: border-color 0.12s;
+}
+.gate-line:focus-within {
+  border-color: #ed821b;
+}
+.gate-caret {
+  display: none;
+}
+.gate-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #151714;
+  font-family: inherit; /* MiSans：不引入系统等宽，字形与全卡同源 */
+  font-weight: 400;
+  font-size: 15px;
+  letter-spacing: 0.14em; /* 密码圆点加宽字距，与几何排印一致 */
+  line-height: 1.6;
+  padding: 0;
+}
+/* 全局规则（style.css:27-30）给 input:focus-visible 加 2px 外扩描边，
+   会叠成「框中框」——正是 m06203 指出的「像是另外画了一个方框」。
+   焦点改由 .gate-line:focus-within 的底线变色表达。 */
+.gate-input:focus,
+.gate-input:focus-visible {
+  outline: 0;
+}
+/* Edge/Chromium 给 type=password 自带「显示密码」眼睛图标与清除按钮，
+   会浮在分段条右侧、破坏印刷平面感——显式隐藏。 */
+.gate-input::-ms-reveal,
+.gate-input::-ms-clear {
+  display: none;
+}
+.gate-input::-webkit-search-cancel-button,
+.gate-input::-webkit-credentials-auto-fill-button {
+  display: none;
+}
+
+/* §12.1-2 Status line：状态由**文字色 + 字重**承载（idle muted / error err），
+   不铺底色、不画左竖线，整行嵌在分段条里。空内容时整行不占位。 */
+.gate-status {
+  margin: 0;
+  min-height: 0;
+  padding: 0 20px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #888277;
+}
+.gate-status:not(:empty) {
+  padding: 11px 20px;
+  border-bottom: 1px solid #c8c9c0;
+}
+.gate-status.is-error:not(:empty) {
+  color: #963e32;
+  font-weight: 700;
+}
+.gate-status.is-ok:not(:empty) {
+  color: #5e615a;
+}
+
+/* §12.1-8 Action stack：全宽主按钮，padding 13px，12px/700 大写 .07em。
+   accent 预算：整卡只有这一枚实心强调（swiss §12.2），故静止为墨实底、
+   hover 才转亮橙——把橙留在交互态。 */
+.gate-actions {
+  padding: 18px 20px;
+  border-bottom: 1px solid #c8c9c0;
+}
+.gate-submit {
+  width: 100%;
+  min-height: 46px;
+  padding: 13px;
+  border: 1px solid #151714;
+  background: #151714;
+  color: #f6f5f3;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.gate-submit:hover {
+  background: #ed821b;
+  border-color: #ed821b;
+  color: #151714;
+}
+.gate-submit:focus-visible {
+  outline: 2px solid #ed821b;
+  outline-offset: 2px;
+}
+.gate-submit[aria-disabled="true"] {
+  background: transparent;
+  border-color: #969183;
+  color: #888277;
+  cursor: wait;
+}
+
+/* 卡底：10px 全大写 .08em 声明行，作为最末一段。 */
+.gate-footnote {
+  margin: 0;
+  padding: 12px 20px;
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: 0.08em;
+  color: #888277;
+  text-align: center;
+}
+
+/* 当天已通过验证（m06467：不再挂一行说明文字）：
+   提示改由头部右侧的琥珀小字承担，输入区只读变淡，按钮措辞换成「进入」。 */
+.gate-card.is-authorized .gate-head-sub {
+  color: #ed821b;
+}
+.gate-card.is-authorized .gate-line,
+.gate-card.is-authorized .gate-line:focus-within {
+  border-color: #c8c9c0;
+}
+.gate-input[aria-disabled="true"] {
+  color: #b0aa9d;
+  caret-color: transparent;
+}
+
+@media (max-width: 600px) {
+  .gate-card { width: min(360px, calc(100vw - 40px)); }
+  .gate-layer { transform: translateX(140px); }
+  .loading.gate-open > *:not(.gate-layer) { --gate-shift: -140px; }
+  .gate-head { padding: 12px 14px; }
+  .gate-band { padding: 14px 14px; }
+  .gate-band-input { padding: 13px 14px 15px; }
+  .gate-status:not(:empty) { padding: 9px 14px; }
+  .gate-actions { padding: 14px; }
+  .gate-footnote { padding: 10px 14px; }
+}
+

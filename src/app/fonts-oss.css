@@ -1,0 +1,4 @@
+/* Noto Sans SC — SIL Open Font License 1.1.
+   Replaces the previously bundled MiSans webfont; variable weight 100–900.
+   License: ./licenses/NotoSansSC-OFL.txt */
+@font-face{font-family:"Noto Sans SC";font-style:normal;font-weight:100 900;font-display:swap;src:url("/fonts/NotoSansSC-VF.woff2") format("woff2");}

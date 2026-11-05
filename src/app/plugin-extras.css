@@ -1,0 +1,434 @@
+/* Plugin additions — scoped additions layered on top of the original
+   stylesheet without modifying any upstream rules. */
+
+/* 顶部文件夹横幅：第一时间显示当前档案列（文件夹）
+   配色走本组局部变量：亮色档＝手写原值（一字未改），暗色档在下面整体换成暗色档取值。
+   变量声明放在横幅自己身上（子元素继承），这样暗色档只换变量、不必给每条规则加
+   [data-dark-surface] 前缀去和 :hover 抢特异性。 */
+#folder-banner {
+  --fb-paper: rgba(241, 240, 236, 0.86);
+  --fb-edge: rgba(23, 23, 19, 0.16);
+  --fb-sheen: rgba(255, 255, 255, 0.7);
+  --fb-ink: #171713;
+  --fb-muted: #878476;
+  --fb-deep: #6f675b;
+  --fb-edge-strong: rgba(23, 23, 19, 0.25);
+  --fb-menu-paper: rgba(241, 240, 236, 0.97);
+  --fb-menu-edge: rgba(23, 23, 19, 0.2);
+  --fb-menu-hover: #ecebe7;
+  --fb-accent: #ed821b;
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+/* 暗色档：同一套语义换成暗色档取值（theme-ui palette 第二列），
+   亮色档是「浅纸 + 深字」，暗色档就是「深纸 + 浅字」，层次关系一一对应 */
+[data-dark-surface="true"] #folder-banner {
+  --fb-paper: rgba(var(--theme-panel-rgb), 0.86);
+  --fb-edge: rgba(var(--theme-ink-rgb), 0.16);
+  --fb-sheen: rgba(255, 255, 255, 0.06);
+  --fb-ink: var(--theme-ink);
+  --fb-muted: var(--theme-muted);
+  --fb-deep: var(--theme-muted);
+  --fb-edge-strong: rgba(var(--theme-ink-rgb), 0.3);
+  --fb-menu-paper: rgba(var(--theme-panel-rgb), 0.97);
+  --fb-menu-edge: rgba(var(--theme-ink-rgb), 0.2);
+  --fb-menu-hover: var(--theme-field);
+}
+#folder-banner .fb-label {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  color: var(--fb-muted);
+}
+#folder-banner strong {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--fb-ink);
+  display: inline-block;
+}
+#folder-banner.flash strong {
+  animation: fb-flash 0.9s ease-out;
+}
+@keyframes fb-flash {
+  0% { transform: scale(1.14); color: var(--fb-accent); }
+  100% { transform: scale(1); color: var(--fb-ink); }
+}
+
+/* 左下信息条中的文件夹名加重（亮色档比同行更深；暗色档整体在下面补配色） */
+#hover-folder {
+  color: #171713;
+  font-weight: 600;
+}
+/* 暗色档下 .hover-label 自身是原项目手写的 #6f675b（无暗色覆盖），在暗场里几乎看不见，
+   故连同加重项一起补：正文用 muted、被加重的文件夹名用 ink，保持与亮色档相同的层次差 */
+[data-dark-surface="true"] .hover-label { color: var(--theme-muted); }
+[data-dark-surface="true"] #hover-folder { color: var(--theme-ink); }
+
+/* 详情信息块整体上移（原 289 → 262 → 202）。
+   注意必须限定桌面档：compact / portrait 的面板顶由 responsive.css 负责
+   （84px / 54% / 70px），而 #id 选择器（1-0-0）会把这些 0-2-0 的规则一起压掉。 */
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) #detail-content {
+  top: 202px;
+}
+
+/* 分层导航：面包屑 + 目录切换菜单 */
+#folder-crumbs {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  max-width: 620px;
+  overflow: hidden;
+}
+#folder-crumbs button {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2.6px;
+  text-transform: uppercase;
+  color: var(--fb-ink);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+#folder-crumbs button:hover { color: var(--fb-accent); }
+#folder-crumbs i {
+  color: var(--fb-muted);
+  font-style: normal;
+  font-size: 11px;
+}
+#folder-switch {
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  color: var(--fb-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--fb-edge-strong);
+  border-radius: 0;
+  padding: 0 0 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#folder-switch:hover { color: var(--fb-ink); border-color: var(--fb-ink); }
+#folder-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  min-width: 240px;
+  background: var(--fb-menu-paper);
+  border: 1px solid var(--fb-menu-edge);
+  border-radius: 3px;
+  padding: 6px;
+  z-index: 60;
+}
+#folder-menu button {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-size: 15px;
+  color: var(--fb-ink);
+  background: transparent;
+  border: none;
+  padding: 10px 14px;
+  cursor: pointer;
+  text-align: left;
+}
+#folder-menu button:hover { background: var(--fb-menu-hover); }
+#folder-menu button span { color: var(--fb-muted); font-size: 11px; letter-spacing: 1px; }
+.fm-empty { padding: 12px 14px; font-size: 12px; color: var(--fb-muted); }
+#folder-banner.flash #folder-crumbs button:last-of-type {
+  animation: fb-flash 0.9s ease-out;
+}
+
+/* 终端内所有按键不显示焦点框（含键盘 Enter 触发的 focus-visible）。
+   界面自带 hover/按下态反馈，视觉不被矩形轮廓破坏。 */
+#viewport button:focus,
+#viewport button:focus-visible,
+#viewport [role="button"]:focus,
+#viewport [role="button"]:focus-visible,
+#viewport .entry-start:focus-visible,
+#viewport .entry-silent:focus-visible,
+#viewport .skip:focus-visible {
+  outline: none !important;
+}
+
+/* 显示状态条：仅在显示异常（图形上下文回收 / 渲染循环停顿 / 重构中）时出现，
+   正常情况带 hidden，不占视觉。 */
+.display-status {
+  position: fixed;
+  left: 50%;
+  bottom: 46px;
+  transform: translateX(-50%);
+  z-index: 90;
+  padding: 7px 16px;
+  background: rgba(37, 40, 32, 0.92);
+  color: #f4f3f0;
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.display-status[hidden] { display: none; }
+
+/* ============================================================
+   顶部条带：品牌 / 导航 / 文件夹横幅 对齐到同一条顶线
+   ────────────────────────────────────────────────────────────
+   设计稿坐标（1920×1080 画布）。共同顶线用一个变量控制，想再高/再低只改它：
+     --rhine-top-line: 30px   → 品牌 30（原稿 114）、导航 30（原稿 124）
+   文件夹横幅是带底框的标签，让"框顶"比文字线高 12px（＝它的内边距），
+   这样框内文字与品牌/导航落在同一行上。
+   compact / portrait 档沿用原项目自己的排布，故排除。
+   ============================================================ */
+#stage {
+  --rhine-top-line: 30px;
+}
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .brand {
+  top: var(--rhine-top-line);
+}
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .system-nav {
+  top: var(--rhine-top-line);
+}
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) #folder-banner {
+  top: var(--rhine-top-line);
+}
+
+/* ============================================================
+   详情面板与右下角「POWERED BY RHINE LAB」不叠字
+   ────────────────────────────────────────────────────────────
+   真因（几何实测）：桌面档 responsive.css 里
+     [data-layout="desktop"] .detail-content { max-height: calc(100% - 369px) }
+   设计稿高 1080 → 面板最高 711，底缘落在 y≈1000；而 .powered 的盒子是
+   y 948–972（bottom:108，行高 24）。档案内容足够长（面板滚到底）时，
+   动作行(+脚注)正好压在 .powered 上 → 叠字。这是原项目既有的隐患，
+   与数据长短有关，所以时有时无。
+   修法：把面板底线上抬到 .powered 之上（留 15px 净空）。
+   因为桌面档下舞台设计高恒为 1080，这个修法与窗口尺寸无关、永远成立。
+   实测（1490×795，内容强制超长并滚到底）：
+     面板高 680 设计px、动作行底缘 909.8、.powered 上缘 948 → 净空 38.2 设计像素 ✓
+   2026-09-18 追加：面板顶再上移 60、要点列表高 +60（总高 719.8），
+   故上限同步 +60（400 → 340），面板底缘仍为 921.8，与水印净空不变。
+   ============================================================ */
+#stage[data-layout="desktop"] .detail-content {
+  max-height: calc(100% - 340px);
+}
+
+/* ============================================================
+   详情页纵向空间再分配（按用户标注截图 + 真机实测）
+   ────────────────────────────────────────────────────────────
+   用户要求：①「← ARCHIVE OVERVIEW」上移到其红框高度
+             ② 腾出的纵向空间给「要点」列表区（增加上下高度）
+             ③ 不要移动 REVEAL FILE / OPEN IN OBSIDIAN 那一行（含脚注）
+   红框实测（用截图像素反解，用品牌/标题/标签/分隔线做锚点标定）：
+     设计稿 y 217–266、高约 49。
+   改前实测（桌面档，设计稿坐标）：
+     back-button 289–321 ｜ 面板 262–921.8（高 659.8）｜ 要点列表 .tab-panel 高 189
+     动作行 843.8–889.8 ｜ 脚注 911.8–921.8
+   算法：Δ = 60 →
+     · back-button 289 → 229（盒子 229–261，正好落在红框 217–266 内 ✓）
+     · 面板顶 262 → 202、列表高 189 → 249（两处同为 60）
+       ⇒ 列表底缘的绝对位置不变，动作行与脚注**分毫未动** ✓
+         （面板内容整体上移 60，而列表同时长高 60，正好相抵）
+   只作用于桌面档；窄屏档的面板/列表尺寸由 responsive.css 各自定义。
+   ============================================================ */
+#stage[data-layout="desktop"] .back-button {
+  top: 229px;
+}
+#stage[data-layout="desktop"] .tab-panel {
+  height: 249px;
+}
+
+/* ============================================================
+   右下角品牌标「POWERED BY RHINE LAB」下移，与底部状态行成一列
+   ────────────────────────────────────────────────────────────
+   原稿：.powered { bottom: 108px } → 设计稿 y 948–972（贴着详情面板的
+   脚注下方，看起来像面板的一部分）。
+   实测底部状态行 .system-footer 位于 y 1032–1045（SESSION AUTHORIZED /
+   CL ／ 时间 / REINITIALIZE ↗ 三者在同一行），两者右缘同为 x=1861。
+   故把它下移，使其正好落在状态行正上方：bottom 60 → y 996–1020，
+   与状态行留 12 设计像素净空。
+   注：详情面板的 max-height 已限制为 100% − 400px（底缘 922），不会与
+   下移后的品牌标相撞（同时原稿的 369px 反而会与之重叠，故保持 400）。
+   仅桌面档生效；compact / portrait 档本就不显示该元素。
+   ============================================================ */
+/* 覆盖除窄屏（compact / portrait，本就不显示）与移动开机预览档以外的全部档位：
+   桌面档 plus 开机阶段（data-layout="opening"）—— 否则开机动画里会先停在旧位置、
+   开机结束后再跳一下。 */
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]):not([data-mobile-boot="true"]) .powered {
+  bottom: 60px;
+}
+
+/* ACCESS FILE 的三个档位变量声明在 #stage 上（只被下面 .read-file 的规则消费）。
+   为什么放这里：暗色档要换的是这三个值，如果写成
+   `[data-dark-surface="true"] #stage:not(...):not(...) .read-file{...}`，
+   它的特异性(1-4-0)会与 `...:hover > span`(1-4-0) 相同并因排在后面前把悬停态一起压掉。
+   改成"只换变量"就没有这个竞争：变量不参与选择器特异性，消费规则一条都不用重写。 */
+#stage {
+  --access-line: var(--theme-line);   /* 1px 细线 */
+  --access-mark-alpha: 0.5;           /* 左侧短条 / 右侧箭头 的档位 */
+  --access-mark-hover: 0.9;
+}
+
+/* ============================================================
+   「ACCESS FILE →」：一眼可辨的入口（全部沿用本终端既有语汇）
+   ────────────────────────────────────────────────────────────
+   语汇：细线描边（--access-line）· 3px 左侧短粗条（--theme-muted @ --access-mark-alpha）· 强调色（--theme-accent）
+   尺寸：高度 42 设计像素（垂直内边距 4；原稿 58 → 48 → 42，每次只动"大小"、顶边位置不动）
+   渐隐：**填充与轮廓一起渐隐**，同一条曲线 --access-fade（左 100% →10% 处 75% → 右端 0%）
+        · 填充 + 磨砂在 ::before；轮廓（1px 细线 + 3px 左短条）在 ::after
+        · CSS 的 border 无法直接渐变，故 border 改为透明占位（保住盒模型分毫不动），
+          真正的轮廓用 ::after 的 border + mask 淡出 → 右侧真的"没有线"，而不是只淡了颜色
+        · ::after 用负 inset 抵消透明占位边框，轮廓落回原位置（不产生 1px 位移）
+        · 填充峰值仍是 4%（此前逐轮调定的"很淡"值），只是把原来的 58% 停点换成同一条曲线
+   静止时的"可点"提示靠箭头缓慢右移（7px / 2.8s）；悬停整片转强调色 + 箭头走 9px。
+   左短条与右侧箭头同为灰调 --theme-muted 且同一档不透明度（两者原是最重的墨色，
+   比渐隐到边缘的轮廓还抢眼）。三个档位值集中在 #stage 上声明：
+     --access-line 细线色 · --access-mark-alpha 短条/箭头档位 · --access-mark-hover 悬停档位
+   暗色档只换这三个变量（见下方"暗色档三处适配"），规则本身一条都不用重写。
+   ============================================================ */
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file {
+  /* 渐隐曲线：左端 100% 不透明 → 稍微右一点（10%）降到 75% → 最右端 0%。
+     填充与轮廓共用同一条曲线，所以两者右侧一起"消失"。改曲线只需改这一处。 */
+  --access-fade: linear-gradient(
+    90deg,
+    #000 0%,
+    rgba(0, 0, 0, 0.75) 10%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  gap: 0;                     /* 原为 gap:70px；改为显式 margin，避免左侧短条把文字推开 70px */
+  margin-left: 43px;          /* 文字左缘仍落在 x=1028（对齐上方各行） */
+  margin-top: 50px;           /* 顶边位置不变（高度只向内收） */
+  padding: 4px 18px 4px 12px; /* 垂直内边距 7 → 4：高度 48 → 42 */
+  position: relative;
+  isolation: isolate;         /* 让伪元素的 z-index:-1 留在本元素内，不会沉到祖先背景之下 */
+  border: 1px solid transparent;      /* 透明占位：保住盒模型，轮廓搬到 ::after 才可渐变 */
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  background: none;           /* 填充搬到 ::before（需要单独做渐隐遮罩） */
+  box-shadow: 0 10px 30px rgba(23, 23, 19, 0.08);
+  color: var(--theme-ink);
+  transition:
+    opacity 0.7s 0.4s,
+    color 0.35s;
+}
+/* 底色层：填充 + 磨砂，用同一条渐隐遮罩淡出 → 右侧完全透明 */
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(var(--theme-panel-rgb), 0.04);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  -webkit-mask-image: var(--access-fade);
+  mask-image: var(--access-fade);
+}
+/* 轮廓层：1px 细线 + 3px 左短条，同样用渐隐遮罩淡出（左端仍是不透明的实线）
+   左侧短条：颜色由近黑 --theme-ink 换成灰调 --theme-muted，档位取 --access-mark-alpha
+   （亮色档 50%、暗色档 100%）—— 用 rgba(muted, alpha) 而不是给整个 ::after 加 opacity，
+   否则 1px 细线会被一起减半、渐隐曲线也跟着被压一档。 */
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file::after {
+  content: "";
+  position: absolute;
+  inset: -1px -1px -1px -3px;  /* 抵消占位的透明边框 → 轮廓精确落回原位 */
+  z-index: -1;
+  pointer-events: none;
+  border: 1px solid var(--access-line);
+  border-left: 3px solid rgba(var(--theme-muted-rgb), var(--access-mark-alpha));
+  -webkit-mask-image: var(--access-fade);
+  mask-image: var(--access-fade);
+  transition: border-color 0.35s;
+}
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file > span {
+  margin-left: 70px;          /* 与原稿的文字↔箭头间距一致 */
+  color: var(--theme-muted);  /* 箭头改灰调（原为继承 --theme-ink） */
+  opacity: var(--access-mark-alpha);   /* 与左侧短条同一档 */
+  transition: color 0.35s, opacity 0.35s;
+  animation: rhine-access-nudge 2.8s cubic-bezier(0.33, 0, 0.67, 1) infinite;
+}
+@keyframes rhine-access-nudge {
+  0%, 58% { transform: translateX(0); }
+  78% { transform: translateX(7px); }
+  100% { transform: translateX(0); }
+}
+/* 悬停 / 键盘聚焦：短条与描边转强调色，箭头走得更远（沿用原稿 9px）
+   注意：必须带上与基础规则相同的 :not() 链——基础规则用两条 :not 抬到了
+   1-3-0，天真的 `#stage .read-file:hover`（1-2-0）会被反压、悬停完全无效。 */
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file:hover,
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file:focus-visible {
+  box-shadow: 0 12px 34px rgba(23, 23, 19, 0.14);
+  color: var(--theme-accent);
+}
+/* 轮廓转强调色要写在 ::after 上：元素自身的 border 已是透明占位；
+   左短条沿用同一档透明度变量（亮色档 0.5 / 暗色档 1），悬停只换色相不改轻重 */
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file:hover::after,
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file:focus-visible::after {
+  border-color: var(--theme-accent);
+  border-left-color: rgba(var(--theme-accent-rgb), var(--access-mark-alpha));
+}
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file:hover::before,
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file:focus-visible::before {
+  background: rgba(var(--theme-panel-rgb), 0.1);
+}
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file:hover > span,
+#stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file:focus-visible > span {
+  animation: none;
+  color: var(--theme-accent);
+  opacity: var(--access-mark-hover);   /* 悬停略提亮，配合强调色一起"醒来" */
+  transform: translateX(9px);
+}
+/* ============================================================
+   暗色档（[data-dark-surface="true"] 由 paintTheme 写在 <html> 上）三处适配
+   ────────────────────────────────────────────────────────────
+   实测依据（暗色档调色板：ink 224,227,220 ／ muted 166,176,177 ／ line 83,97,102 ／ panel 32,42,47）：
+   ① 1px 细线：--theme-line 暗色档 = 83,97,102，而按钮背后的暗场景本就 60~150 →
+      覆盖率 1.0 处也只有 Δ4~10 灰度，框在暗色档里等于消失。改用 --theme-muted（166,176,177），
+      与亮色档「细线 170 vs 背景 232（Δ62）」的对比度相当。
+   ② 短条 / 箭头：灰调在亮色档是「比纸深 55」，暗色档若仍取 50% 就只有 Δ15 左右（实测近乎看不见），
+      故暗色档提到满档（166，Δ≈36~80）；悬停同为满档，靠换色相（--theme-accent）表示。
+   ③ 磨砂：亮色档下 backdrop-filter 几乎不可见（实测 A−C |Δ| ≤ 4，因为亮色背景本来就平滑），
+      但暗场景对比高（同排 66 与 219 并存），4px 模糊会把按钮内摊成一块平滑亮斑并溢出左缘
+      （实测左缘外 9px 处的像素被抬了 56 灰度）。暗色档关掉磨砂，两档观感才对等。
+   ============================================================ */
+[data-dark-surface="true"] #stage {
+  --access-line: var(--theme-muted);
+  --access-mark-alpha: 1;
+  --access-mark-hover: 1;
+}
+[data-dark-surface="true"] #stage:not([data-layout="compact"]):not([data-layout="portrait"]) .read-file::before {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* 低动效偏好：去掉箭头循环 */
+#stage.reduce-motion .read-file > span { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  #stage .read-file > span { animation: none; }
+}
+
+/* ============================================================
+   竖屏（portrait）详情页：卡片信息牌与正文撞行
+   ────────────────────────────────────────────────────────────
+   自测发现：portrait 档 responsive.css 把 .object-caption 改成整幅宽的横排
+   （left/right: var(--edge); bottom: 46%），而详情面板同为整幅宽，
+   于是信息牌（NO.00x）落在面板正文行上 —— 实测矩形相交 860×20，
+   截图中可见「NO.001」压在 ABSTRACT 正文行上（原项目自带的窄屏缺陷）。
+   处理：竖屏 **详情模式**下隐藏该信息牌（此时面板自身已显示 FILE 编号与标题，
+   信息牌是重复信息）；阵列模式仍保留。桌面/紧凑档不受影响。
+   ============================================================ */
+[data-layout="portrait"][data-mode="detail"] .object-caption {
+  opacity: 0;
+  pointer-events: none;
+}

@@ -1,0 +1,533 @@
+/* ============================================================
+   莱茵档案 · 原生视图皮肤（可编辑）
+   ────────────────────────────────────────────────────────────
+   作用域：仅挂到「从终端进入的那个标签页」（.rhine-skin），
+   其它标签页与全局主题完全不受影响。
+
+   数值来源：原项目 src/app/style.css 的真实定义；原项目无对应物
+   者标注「推导」。
+
+   ⚠ 与用户现有主题（memory-theme / memory-ui）的对抗方式，实测结论：
+
+   1) 主题有 122 处 !important，其中这条把叶子背景压成近白色：
+        .theme-light .workspace-leaf-content { background-color: var(--background-primary) !important }
+      特异性 0-2-0 —— 我原先写的 .rhine-skin 只有 0-1-0，被压掉，
+      于是出现「白块」。→ 对策 A：把选择器写两次（.rhine-skin.rhine-skin）
+      抬到 0-3-0 以上（不依赖 Obsidian 容器类名，因此不会因版本变化失效）。
+   2) 更彻底的一招：在作用域内**改写主题的调色变量**。主题的规则引用
+      var(--background-primary) 等，变量改写不参与特异性/顺序竞争，
+      因此主题无论怎么写都只会渲染出我们的终端色。→ 对策 B（下方变量块）。
+   ============================================================ */
+
+.rhine-skin {
+  /* ---- 终端调色板（原项目 style.css 真实值） ---- */
+  --rs-bg: #f0eeee;           /* :root background */
+  --rs-ink: #080a08;          /* :root color */
+  --rs-body: #5a584e;         /* .tab-panel p color */
+  --rs-line: #504b41;         /* .callout-rule */
+  --rs-rule: #20221d;         /* .detail-rule */
+  --rs-edge: #b8b3a9;         /* .back-button border */
+  --rs-dim: #807b70;          /* .metadata dt */
+  --rs-dim-2: #77756d;        /* .eyebrow */
+  --rs-foot: #9a9487;         /* .detail-footnote */
+  --rs-warm: #946b3c;         /* .back-button:hover */
+  --rs-dark: #252820;         /* .solid-button */
+  --rs-dark-hover: #4b4a3b;   /* .solid-button:hover */
+  --rs-dark-ink: #f4f3f0;
+  --rs-chip: #e4d5c1;         /* 暖色块 */
+
+  /* ---- 对策 B：覆盖 Obsidian / 主题的调色变量（作用域内，只影响本标签页） ---- */
+  --background-primary: var(--rs-bg);
+  --background-primary-alt: #edece9;     /* .modal-backdrop 底色 */
+  --background-secondary: #edece9;
+  --background-secondary-alt: #dcd7cc;
+  --background-modifier-border: var(--rs-edge);
+  --background-modifier-border-hover: var(--rs-line);
+  --background-modifier-border-focus: var(--rs-line);
+  --background-modifier-hover: rgba(228, 213, 193, 0.35);   /* 暖色块降透明 */
+  --background-modifier-active-hover: rgba(228, 213, 193, 0.5);
+  --text-normal: var(--rs-body);          /* 正文用 #5a584e */
+  --text-muted: var(--rs-dim);
+  --text-faint: var(--rs-foot);
+  --text-accent: var(--rs-warm);
+  --text-accent-hover: var(--rs-warm);
+  --text-selection: var(--rs-chip);
+  --text-highlight-bg: rgba(228, 213, 193, 0.6);
+  --link-color: var(--rs-warm);
+  --link-color-hover: var(--rs-warm);
+  --link-external-color: var(--rs-warm);
+  --link-external-color-hover: var(--rs-warm);
+  --link-decoration: none;
+  --link-decoration-hover: underline;
+  --h1-color: var(--rs-ink);
+  --h2-color: var(--rs-ink);
+  --h3-color: var(--rs-ink);
+  --h4-color: var(--rs-ink);
+  --h5-color: var(--rs-dim-2);
+  --h6-color: var(--rs-dim-2);
+  --inline-title-color: var(--rs-ink);
+  --hr-color: var(--rs-line);
+  --blockquote-border-color: var(--rs-rule);
+  --blockquote-background-color: transparent;
+  --code-background: var(--rs-chip);
+  --code-normal: #24221f;
+  --code-comment: #6f6a60;
+  --tag-color: var(--rs-body);
+  --tag-background: transparent;
+  --tag-background-hover: transparent;
+  --tag-border-color: var(--rs-edge);
+  --caret-color: var(--rs-ink);
+  --checkbox-color: var(--rs-dark);
+  --checkbox-border-color: var(--rs-edge);
+  --checkbox-marker-color: var(--rs-bg);
+  --table-border-color: var(--rs-edge);
+  --table-header-background: transparent;
+  --table-row-alt-background: transparent;
+  --icon-color: var(--rs-dim);
+  --icon-color-hover: var(--rs-ink);
+  --icon-color-active: var(--rs-ink);
+  --titlebar-background: var(--rs-bg);
+  --titlebar-text-color: var(--rs-dim-2);
+  --embed-background: transparent;
+  --embed-border-left: 1px solid var(--rs-edge);
+  --callout-color: 148, 107, 60;
+  --callout-border-width: 1px;
+
+  /* ---- 对策 A：自身背景（双重类名 → 特异性 0-2-0 起，压过主题 0-2-0 的叶子规则需再抬） ---- */
+  background-color: var(--rs-bg);
+  color: var(--rs-ink);
+  font-family: "MiSans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+/* 叶子容器背景：主题是 .theme-light .workspace-leaf-content（0-2-0 + !important），
+   这里用 .rhine-skin.rhine-skin.rhine-skin（0-3-0 + !important）确保胜出。 */
+.rhine-skin.rhine-skin.rhine-skin,
+.rhine-skin.rhine-skin.rhine-skin .view-content,
+.rhine-skin.rhine-skin.rhine-skin .view-header,
+.rhine-skin.rhine-skin.rhine-skin .view-header-title,
+.rhine-skin.rhine-skin.rhine-skin .view-header-title-container,
+.rhine-skin.rhine-skin.rhine-skin .markdown-reading-view,
+.rhine-skin.rhine-skin.rhine-skin .markdown-preview-view,
+.rhine-skin.rhine-skin.rhine-skin .markdown-preview-sizer,
+.rhine-skin.rhine-skin.rhine-skin .markdown-preview-pusher,
+.rhine-skin.rhine-skin.rhine-skin .markdown-preview-section,
+.rhine-skin.rhine-skin.rhine-skin .markdown-source-view,
+.rhine-skin.rhine-skin.rhine-skin .cm-editor,
+.rhine-skin.rhine-skin.rhine-skin .cm-scroller,
+.rhine-skin.rhine-skin.rhine-skin .cm-sizer,
+.rhine-skin.rhine-skin.rhine-skin .cm-contentContainer,
+.rhine-skin.rhine-skin.rhine-skin .cm-content,
+.rhine-skin.rhine-skin.rhine-skin .cm-gutters,
+.rhine-skin.rhine-skin.rhine-skin .cm-lineNumbers {
+  background-color: var(--rs-bg) !important;
+  font-family: "MiSans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif !important;
+}
+.rhine-skin.rhine-skin.rhine-skin {
+  color: var(--rs-ink) !important;
+}
+
+/* 该标签页所在标签组的标签栏（白条来源之一；:has 不支持时本规则自动失效） */
+.workspace-tabs.rhine-skin-tabs > .workspace-tab-header-container,
+.workspace-tabs.rhine-skin-tabs > .workspace-tab-header-container .workspace-tab-header-container-inner {
+  background-color: #f0eeee !important;
+}
+
+/* 笔记内嵌大标题（inline title）：.detail-content h2 同规格 */
+.rhine-skin.rhine-skin .inline-title {
+  color: var(--rs-ink) !important;
+  font-size: 40px !important;
+  line-height: 1.12 !important;
+  letter-spacing: -1.3px !important;
+  font-weight: 700 !important;
+  font-family: "MiSans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif !important;
+  border-bottom: 0 !important;
+}
+/* 视图头部标题：.eyebrow 规格 */
+.rhine-skin.rhine-skin .view-header-title {
+  color: var(--rs-dim-2) !important;
+  letter-spacing: 1.3px !important;
+  font-size: 12px !important;
+}
+.rhine-skin.rhine-skin .view-header {
+  border-bottom-color: var(--rs-line) !important;
+}
+.rhine-skin.rhine-skin .view-header-icon,
+.rhine-skin.rhine-skin .view-action {
+  color: var(--rs-dim-2) !important;
+}
+
+/* ---------- 阅读视图：标题（.detail-content h2 等真实规格） ---------- */
+.rhine-skin.rhine-skin .markdown-preview-view h1,
+.rhine-skin.rhine-skin .markdown-reading-view h1,
+.rhine-skin.rhine-skin .markdown-rendered h1 {
+  font-size: 40px !important;          /* .detail-content h2 */
+  line-height: 1.12 !important;
+  letter-spacing: -1.3px !important;
+  margin: 30px 0 13px !important;
+  border: 0 !important;
+  color: var(--rs-ink) !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view h2,
+.rhine-skin.rhine-skin .markdown-reading-view h2 {
+  font-size: 18px !important;
+  letter-spacing: -0.3px !important;
+  margin: 28px 0 10px !important;
+  padding: 0 0 8px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--rs-line) !important;   /* .callout-rule 色 */
+  color: var(--rs-ink) !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view h2::after,
+.rhine-skin.rhine-skin .markdown-reading-view h2::after,
+.rhine-skin.rhine-skin .markdown-reading-view h2::before { content: none !important; }
+.rhine-skin.rhine-skin .markdown-preview-view h3,
+.rhine-skin.rhine-skin .markdown-preview-view h4,
+.rhine-skin.rhine-skin .markdown-rendered h3,
+.rhine-skin.rhine-skin .markdown-rendered h4 {
+  font-size: 15px !important;
+  letter-spacing: -0.1px !important;
+  color: var(--rs-ink) !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view h3::before,
+.rhine-skin.rhine-skin .markdown-preview-view h4::before { content: none !important; }
+.rhine-skin.rhine-skin .markdown-preview-view h5,
+.rhine-skin.rhine-skin .markdown-preview-view h6 {
+  font-size: 11px !important;          /* .eyebrow */
+  letter-spacing: 1.3px !important;
+  color: var(--rs-dim-2) !important;
+  font-weight: 400 !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view p,
+.rhine-skin.rhine-skin .markdown-preview-view li {
+  font-size: 15px !important;          /* .tab-panel p */
+  line-height: 1.95 !important;
+  color: var(--rs-body) !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view p { text-align: justify; }
+.rhine-skin.rhine-skin .markdown-preview-view strong { color: var(--rs-ink) !important; }
+
+/* 链接：原项目强调色 */
+.rhine-skin.rhine-skin .markdown-preview-view a.internal-link,
+.rhine-skin.rhine-skin .markdown-preview-view a.external-link {
+  color: var(--rs-warm) !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid rgba(148, 107, 60, 0.35);
+}
+/* 分割线：.callout-rule 细线（memory-theme 的 hr 是渐变+动效，需整段覆盖） */
+.rhine-skin.rhine-skin .markdown-preview-view hr {
+  height: 1px !important;
+  background: var(--rs-line) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  margin: 26px 0 !important;
+  opacity: 1 !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view hr::before,
+.rhine-skin.rhine-skin .markdown-preview-view hr::after { content: none !important; }
+/* 引用：左线用 .detail-rule 色 */
+.rhine-skin.rhine-skin .markdown-preview-view blockquote {
+  border-left: 2px solid var(--rs-rule) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--rs-body) !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view blockquote::before,
+.rhine-skin.rhine-skin .markdown-preview-view blockquote::after { content: none !important; }
+/* 表格：「推导」——边框 .back-button 色，表头 .metadata dt 规格 */
+.rhine-skin.rhine-skin .markdown-preview-view table {
+  border-collapse: collapse !important;
+  border: 1px solid var(--rs-edge) !important;
+  font-size: 13px !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view th,
+.rhine-skin.rhine-skin .markdown-preview-view td {
+  border: 1px solid var(--rs-edge) !important;
+  padding: 7px 12px !important;
+  background: transparent !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view th {
+  font-size: 9px !important;
+  letter-spacing: 0.7px !important;
+  color: var(--rs-dim) !important;
+  font-weight: 400 !important;
+}
+/* 代码：「推导」——行内暖块 / 块级深色（.solid-button） */
+.rhine-skin.rhine-skin .markdown-preview-view code {
+  background: var(--rs-chip) !important;
+  color: #24221f !important;
+  border-radius: 0 !important;
+  font-family: "JetBrains Mono", Consolas, monospace !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view pre {
+  background: var(--rs-dark) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 14px 18px !important;
+}
+.rhine-skin.rhine-skin .markdown-preview-view pre code {
+  background: transparent !important;
+  color: var(--rs-dark-ink) !important;
+}
+/* 标签：「推导」——沿用 .back-button 描边规格 */
+.rhine-skin.rhine-skin .markdown-preview-view a.tag {
+  font-size: 10px !important;
+  color: var(--rs-body) !important;
+  background: transparent !important;
+  border: 1px solid var(--rs-edge) !important;
+  border-radius: 0 !important;
+  padding: 3px 7px !important;
+}
+/* 图片与 callout：「推导」 */
+.rhine-skin.rhine-skin .markdown-preview-view img { border: 1px solid var(--rs-edge); border-radius: 0 !important; }
+.rhine-skin.rhine-skin .markdown-preview-view .callout {
+  border: 1px solid var(--rs-edge) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  mix-blend-mode: normal;
+}
+.rhine-skin.rhine-skin .markdown-preview-view .callout-title { color: var(--rs-ink) !important; }
+
+/* ---------- 属性面板（frontmatter，阅读态与实时预览态共用） ---------- */
+.rhine-skin.rhine-skin .metadata-container,
+.rhine-skin.rhine-skin .metadata-container .metadata-properties,
+.rhine-skin.rhine-skin .metadata-container .metadata-property {
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+.rhine-skin.rhine-skin .metadata-container {
+  border: 1px solid var(--rs-edge) !important;
+}
+.rhine-skin.rhine-skin .metadata-properties-heading,
+.rhine-skin.rhine-skin .metadata-properties-title,
+.rhine-skin.rhine-skin .metadata-property-key {
+  font-size: 9px !important;
+  letter-spacing: 0.7px !important;
+  color: var(--rs-dim) !important;
+  font-weight: 400 !important;
+}
+.rhine-skin.rhine-skin .metadata-property-key-input,
+.rhine-skin.rhine-skin .metadata-input-longtext,
+.rhine-skin.rhine-skin .metadata-input-number,
+.rhine-skin.rhine-skin .metadata-input-text {
+  color: var(--rs-ink) !important;
+  font-size: 14px !important;
+}
+.rhine-skin.rhine-skin .metadata-property-value { color: var(--rs-ink) !important; font-size: 14px !important; }
+.rhine-skin.rhine-skin .metadata-property-icon,
+.rhine-skin.rhine-skin .collapse-indicator { color: var(--rs-dim) !important; }
+.rhine-skin.rhine-skin .metadata-add-button { color: var(--rs-dim-2) !important; background: transparent !important; }
+
+/* ---------- 编辑视图（CodeMirror）：与阅读视图同一套规格 ---------- */
+.rhine-skin.rhine-skin .cm-content {
+  font-size: 15px !important;
+  line-height: 1.95 !important;
+  color: var(--rs-body) !important;
+  caret-color: var(--rs-ink);
+}
+.rhine-skin.rhine-skin .cm-line { padding-left: 2px; }
+.rhine-skin.rhine-skin .cm-header-1 {
+  font-size: 30px !important;
+  font-weight: 700 !important;
+  letter-spacing: -1px !important;
+  color: var(--rs-ink) !important;
+}
+.rhine-skin.rhine-skin .cm-header-2 {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.4px !important;
+  color: var(--rs-ink) !important;
+}
+.rhine-skin.rhine-skin .cm-header-3,
+.rhine-skin.rhine-skin .cm-header-4,
+.rhine-skin.rhine-skin .cm-header-5,
+.rhine-skin.rhine-skin .cm-header-6 {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: var(--rs-ink) !important;
+}
+.rhine-skin.rhine-skin .cm-strong { color: var(--rs-ink) !important; }
+.rhine-skin.rhine-skin .cm-link,
+.rhine-skin.rhine-skin .cm-hmd-internal-link,
+.rhine-skin.rhine-skin .cm-url { color: var(--rs-warm) !important; }
+.rhine-skin.rhine-skin .cm-quote { color: var(--rs-body) !important; }
+.rhine-skin.rhine-skin .cm-formatting,
+.rhine-skin.rhine-skin .cm-formatting-header,
+.rhine-skin.rhine-skin .cm-formatting-link {
+  color: var(--rs-dim) !important;
+  opacity: 0.7;
+}
+.rhine-skin.rhine-skin .cm-active.cm-line {
+  background: rgba(228, 213, 193, 0.28) !important;   /* 暖色块降透明 */
+}
+.rhine-skin.rhine-skin .cm-selectionBackground,
+.rhine-skin.rhine-skin .cm-content ::selection { background: var(--rs-chip) !important; }
+.rhine-skin.rhine-skin .cm-cursor { border-left-color: var(--rs-ink) !important; }
+.rhine-skin.rhine-skin .cm-matchingBracket {
+  background: var(--rs-chip) !important;
+  color: var(--rs-ink) !important;
+}
+
+/* 滚动条：原项目 style.css:836-837 */
+.rhine-skin.rhine-skin .cm-scroller,
+.rhine-skin.rhine-skin .markdown-preview-view {
+  scrollbar-width: thin;
+  scrollbar-color: #bbb4a6 transparent;
+}
+.rhine-skin.rhine-skin ::-webkit-scrollbar-thumb { background: #bbb4a6; border-radius: 0; }
+.rhine-skin.rhine-skin ::-webkit-scrollbar-track { background: transparent; }
+
+/* 视图顶部细线：原项目 .callout-rule 的分隔语言（推导用法） */
+.rhine-skin.rhine-skin .markdown-preview-view::before,
+.rhine-skin.rhine-skin .markdown-source-view::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--rs-line);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ---------- 深色模式：原项目 3D 场景深色值 ---------- */
+.theme-dark .rhine-skin {
+  --rs-bg: #11181b;
+  --rs-ink: #f0eeee;
+  --rs-body: #b9b6ab;
+  --rs-line: #263136;
+  --rs-rule: #f0eeee;
+  --rs-edge: #3a4348;
+  --rs-dim: #8a8f8c;
+  --rs-dim-2: #8a8f8c;
+  --rs-warm: #c99a5f;
+  --rs-dark: #0d1315;
+  --rs-dark-hover: #1b2327;
+  --rs-chip: #2f322b;
+
+  --background-primary-alt: #192125;     /* .terminal-modal 深色值 */
+  --background-secondary: #192125;
+  --background-secondary-alt: #192125;
+}
+.theme-dark .workspace-tabs.rhine-skin-tabs > .workspace-tab-header-container,
+.theme-dark .workspace-tabs.rhine-skin-tabs > .workspace-tab-header-container .workspace-tab-header-container-inner {
+  background-color: #11181b !important;
+}
+.theme-dark .rhine-skin.rhine-skin.rhine-skin,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .view-content,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .view-header,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .markdown-reading-view,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .markdown-preview-view,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .markdown-preview-sizer,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .markdown-preview-pusher,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .markdown-preview-section,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .markdown-source-view,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .cm-editor,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .cm-scroller,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .cm-content,
+.theme-dark .rhine-skin.rhine-skin.rhine-skin .cm-gutters {
+  background-color: var(--rs-bg) !important;
+}
+.theme-dark .rhine-skin.rhine-skin .cm-active.cm-line {
+  background: rgba(38, 49, 54, 0.5) !important;
+}
+
+/* ============================================================
+   莱茵档案终端（ItemView）自身：Obsidian 的 tab 条与 view-header
+   是外壳 DOM，不属于我们的网页；把 view-header 隐藏、tab 条并入纸面，
+   避免顶部两条白带。作用域只限本视图，不影响其它标签页与全局主题。
+   ============================================================ */
+.workspace-leaf-content[data-type="rhine-archive-view"] .view-header {
+  display: none !important;
+}
+.workspace-leaf-content[data-type="rhine-archive-view"],
+.workspace-leaf-content[data-type="rhine-archive-view"] .view-content,
+.workspace-leaf-content[data-type="rhine-archive-view"] .view-content.rhine-archive-content {
+  padding: 0 !important;
+  background: #EFEAE0 !important;
+  border-radius: 0 !important;
+}
+.theme-dark .workspace-leaf-content[data-type="rhine-archive-view"],
+.theme-dark .workspace-leaf-content[data-type="rhine-archive-view"] .view-content,
+.theme-dark .workspace-leaf-content[data-type="rhine-archive-view"] .view-content.rhine-archive-content {
+  background: #11181b !important;
+}
+/* 用插件 onOpen 给本视图所在标签栏挂的稳定类，替代 :has()：侧栏折叠/展开时不会触发全窗选择器重算而闪白。 */
+.workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container,
+.workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container .workspace-tab-header-container-inner {
+  background: #EFEAE0 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: none !important;
+}
+/* 标签头自身/内部都置透明，只让外层容器纸色透出来；否则空标签页会露出一块块白色圆角。 */
+.workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container .workspace-tab-header,
+.workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container .workspace-tab-header-inner,
+.workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container .workspace-tab-header-inner-icon,
+.workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container .workspace-tab-header-inner-title,
+.workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container .workspace-tab-header-inner-close-button,
+.workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container .workspace-tab-header-spacer {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container .workspace-tab-header-inner-title {
+  color: #5a584e !important;
+}
+.theme-dark .workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container,
+.theme-dark .workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container .workspace-tab-header-container-inner {
+  background: #11181b !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+.theme-dark .workspace-tabs.rhine-archive-tabs > .workspace-tab-header-container .workspace-tab-header-inner-title {
+  color: #b8b3a9 !important;
+}
+
+/* 兜底（终端视图激活时，连左侧栏原生图标 tab 一起并进纸面；不再用 :has()，侧栏折叠不会重算闪白） */
+body.rhine-archive-active .workspace-tab-header-container,
+body.rhine-archive-active .workspace-tab-header-container .workspace-tab-header-container-inner {
+  background: #EFEAE0 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: none !important;
+}
+body.rhine-archive-active .workspace-tab-header-container .workspace-tab-header,
+body.rhine-archive-active .workspace-tab-header-container .workspace-tab-header-inner,
+body.rhine-archive-active .workspace-tab-header-container .workspace-tab-header-inner-icon,
+body.rhine-archive-active .workspace-tab-header-container .workspace-tab-header-inner-title,
+body.rhine-archive-active .workspace-tab-header-container .workspace-tab-header-inner-close-button,
+body.rhine-archive-active .workspace-tab-header-container .workspace-tab-header-spacer {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+body.rhine-archive-active .workspace-tab-header-container .workspace-tab-header-inner-title {
+  color: #5a584e !important;
+}
+body.theme-dark.rhine-archive-active .workspace-tab-header-container,
+body.theme-dark.rhine-archive-active .workspace-tab-header-container .workspace-tab-header-container-inner {
+  background: #11181b !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+body.theme-dark.rhine-archive-active .workspace-tab-header-container .workspace-tab-header-inner-title {
+  color: #b8b3a9 !important;
+}
+
+/* 白角真凶：Obsidian 给每个标签头加的 ::before/::after 用一个 40px 的白色 box-shadow 画圆角接缝，
+   标签头背景设为透明后仍会露出白色圆角。归档视图激活时直接隐藏这两个伪元素。 */
+.workspace-tabs.rhine-archive-tabs .workspace-tab-header::before,
+.workspace-tabs.rhine-archive-tabs .workspace-tab-header::after,
+body.rhine-archive-active .workspace-tab-header::before,
+body.rhine-archive-active .workspace-tab-header::after {
+  display: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* 档案视图激活时，根分栏与标签栏背景统一用纸色；侧栏收起/展开的宽度动画期间露出的也是纸色，不会闪白。 */
+body.rhine-archive-active .workspace-split.mod-vertical.mod-root,
+body.rhine-archive-active .workspace-tabs.rhine-archive-tabs {
+  background: #EFEAE0 !important;
+}
+body.theme-dark.rhine-archive-active .workspace-split.mod-vertical.mod-root,
+body.theme-dark.rhine-archive-active .workspace-tabs.rhine-archive-tabs {
+  background: #11181b !important;
+}
+
+

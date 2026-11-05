@@ -1,0 +1,23 @@
+{
+  "name": "rhine-archive-terminal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/patch-rolling-number.mjs",
+    "build": "node build.mjs",
+    "build:personal": "node build.mjs --personal",
+    "typing:samples": "node scripts/generate-typing-samples.mjs"
+  },
+  "dependencies": {
+    "@kitlangton/rolling-number": "0.4.1",
+    "esbuild": "^0.25.0",
+    "obsidian": "^1.8.7",
+    "three": "^0.183.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.183.0",
+    "puppeteer-core": "^25.13.0",
+    "typescript": "^5.9.3"
+  }
+}
